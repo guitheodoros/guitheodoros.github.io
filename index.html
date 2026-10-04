@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>guitheodoros</title>
+<meta name="description" content="Ferramentas experimentais para imagem e tipografia, 100% no navegador: Risograph, Typexperimental e Viewfinder.">
+<meta property="og:title" content="guitheodoros">
+<meta property="og:description" content="Ferramentas experimentais para imagem e tipografia, 100% no navegador.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 10'%3E%3Ccircle cx='5' cy='5' r='4' fill='%233fa9f5'/%3E%3Ccircle cx='15' cy='5' r='4' fill='%23e0402f'/%3E%3Ccircle cx='25' cy='5' r='4' fill='%23ff7a3d'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* só o tema escuro (grafite) das ferramentas. Cada ferramenta da lista
+     traz a própria cor de destaque em --c. */
+  :root{
+    color-scheme:dark;
+    --bg:#141414;
+    --border:#3a3a3a;
+    --rule:#2c2c2c;
+    --text:#ececec;
+    --muted:#8a8a8a;
+    --bg-op:.16;
+  }
+  *{box-sizing:border-box;}
+  html{ background:var(--bg); }
+  body{
+    margin:0;
+    min-height:100vh;
+    min-height:100dvh;
+    display:flex;
+    flex-direction:column;
+    font-family:"Geist", sans-serif;
+    font-optical-sizing:auto;
+    font-weight:300;
+    background:var(--bg);
+    color:var(--text);
+    padding:16px;
+  }
+
+  /* cabeçalho idêntico ao das ferramentas */
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    border-bottom:2px solid var(--border);
+    padding-bottom:10px;
+  }
+  header h1{ font-size:18px; font-weight:600; margin:0; letter-spacing:1px; }
+  header a{ font-size:11px; color:var(--muted); text-decoration:none; white-space:nowrap; }
+  header a:hover{ color:var(--text); text-decoration:underline; }
+
+  /* fundo: o exemplo da linha sob o mouse ocupa a tela inteira, bem apagado,
+     com fade cruzado entre as ferramentas. Só existe com mouse. */
+  .bg{ position:fixed; inset:0; z-index:0; pointer-events:none; }
+  .bg img{
+    position:absolute; inset:0; width:100%; height:100%;
+    object-fit:cover; opacity:0; transition:opacity .5s ease;
+  }
+  .bg img.on{ opacity:var(--bg-op); }
+  header, main, footer{ position:relative; z-index:1; }
+
+  main{ flex:1; display:flex; flex-direction:column; justify-content:center; padding:clamp(48px, 10vh, 120px) 0 clamp(40px, 8vh, 96px); }
+
+  .intro{ margin:0 0 clamp(40px, 8vh, 88px); }
+  .intro p{ margin:0; max-width:15em; font-size:clamp(22px, 2.6vw, 34px); line-height:1.2; letter-spacing:-.01em; }
+  .intro p + p{ max-width:44ch; margin-top:14px; font-size:clamp(13px, 1.1vw, 15px); line-height:1.5; letter-spacing:0; color:var(--muted); }
+
+  .list-head{
+    display:flex; justify-content:space-between;
+    font-family:"Geist Mono", monospace; font-size:11px; font-weight:400;
+    text-transform:uppercase; letter-spacing:.06em; color:var(--muted);
+    padding-bottom:10px; border-bottom:2px solid var(--border);
+  }
+
+  .tools{ list-style:none; margin:0; padding:0; }
+  .tools li{ border-bottom:1px solid var(--rule); }
+  .tool{
+    --accent:var(--c);
+    display:grid;
+    grid-template-columns:3.5rem minmax(0,1fr) minmax(0,18rem) 2.5rem;
+    grid-template-areas:"num name desc arrow";
+    align-items:center;
+    column-gap:24px;
+    padding:clamp(16px, 2.6vw, 30px) 0;
+    color:var(--text);
+    text-decoration:none;
+    transition:opacity .25s ease;
+  }
+  .num{ grid-area:num; font-family:"Geist Mono", monospace; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .name{
+    grid-area:name;
+    font-size:clamp(36px, 6vw, 100px);
+    font-weight:500;
+    line-height:.95;
+    letter-spacing:-.035em;
+    transition:color .2s ease;
+  }
+  .desc{ grid-area:desc; font-size:14px; line-height:1.45; color:var(--muted); transition:color .2s ease; }
+  .desc .tech{ display:block; margin-top:4px; font-family:"Geist Mono", monospace; font-size:11px; text-transform:uppercase; letter-spacing:.06em; opacity:.75; }
+  .arrow{ grid-area:arrow; justify-self:end; font-size:24px; line-height:1; transition:transform .25s ease, color .2s ease; }
+
+  .shot{ display:none; }
+
+  .tool:hover .name, .tool:focus-visible .name, .tool:hover .arrow, .tool:focus-visible .arrow{ color:var(--accent); }
+  .tool:hover .desc, .tool:focus-visible .desc{ color:var(--text); }
+  .tool:hover .arrow, .tool:focus-visible .arrow{ transform:translateX(6px); }
+  .tool:focus-visible{ outline:2px solid var(--accent); outline-offset:4px; }
+  @media (hover:hover){
+    .tools:hover .tool:not(:hover){ opacity:.32; }
+  }
+
+  footer{
+    display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    font-size:10px; color:var(--muted);
+    border-top:1px solid var(--muted);
+    padding-top:8px;
+  }
+  footer a{ color:inherit; text-decoration:none; }
+  footer a:hover{ color:var(--text); text-decoration:underline; }
+
+  @media (hover:none){ .bg{ display:none; } }
+
+  /* sem mouse ou tela estreita: faixa de imagem na largura toda sob o nome */
+  @media (hover:none), (max-width:900px){
+    .tool{
+      grid-template-columns:minmax(0,1fr);
+      grid-template-areas:"num" "name" "desc" "shot";
+      row-gap:6px;
+    }
+    .name{ font-size:clamp(30px, 10vw, 56px); }
+    .desc{ font-size:13px; }
+    .arrow{ display:none; }
+    .shot{ grid-area:shot; display:block; width:100%; aspect-ratio:3/2; object-fit:cover; margin-top:12px; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .tool, .name, .desc, .arrow, .bg img{ transition:none; }
+    .tool:hover .arrow, .tool:focus-visible .arrow{ transform:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg" id="bg" aria-hidden="true"></div>
+
+<header>
+  <h1>guitheodoros</h1>
+  <a href="https://theodoros.cc" target="_blank" rel="noopener">theodoros.cc</a>
+</header>
+
+<main>
+  <div class="intro">
+    <p>Ferramentas experimentais para imagem e tipografia.</p>
+    <p>Grátis · No navegador · Sem upload.</p>
+  </div>
+
+  <section class="list">
+  <div class="list-head"><span>Ferramentas</span><span>03</span></div>
+  <ul class="tools">
+    <li>
+      <a class="tool" href="https://guitheodoros.github.io/risograph/" data-bg="img/bg/risograph.webp" style="--c:#3fa9f5">
+        <span class="num">01</span>
+        <span class="name">Risograph</span>
+        <span class="desc">Duotone e tritone, retícula, desregistro e grão de papel.<span class="tech">imagem · canvas 2d</span></span>
+        <span class="arrow" aria-hidden="true">→</span>
+        <img class="shot" src="img/sm/risograph.webp" alt="" loading="lazy">
+      </a>
+    </li>
+    <li>
+      <a class="tool" href="https://guitheodoros.github.io/typexperimental/" data-bg="img/bg/typexperimental.webp" style="--c:#e0402f">
+        <span class="num">02</span>
+        <span class="name">Typexperimental</span>
+        <span class="desc">Tipografia experimental com blur, halftone e hachura.<span class="tech">tipografia · webgl2</span></span>
+        <span class="arrow" aria-hidden="true">→</span>
+        <img class="shot" src="img/sm/typexperimental.webp" alt="" loading="lazy">
+      </a>
+    </li>
+    <li>
+      <a class="tool" href="https://guitheodoros.github.io/viewfinder/" data-bg="img/bg/viewfinder.webp" style="--c:#ff7a3d">
+        <span class="num">03</span>
+        <span class="name">Viewfinder</span>
+        <span class="desc">Câmera térmica, CCTV e camcorder, com OSD e grade multicâmera.<span class="tech">foto · webgl2</span></span>
+        <span class="arrow" aria-hidden="true">→</span>
+        <img class="shot" src="img/sm/viewfinder.webp" alt="" loading="lazy">
+      </a>
+    </li>
+  </ul>
+  </section>
+
+</main>
+
+<footer>
+  <span>Guilherme Theodoro &middot; 2026</span>
+  <a href="https://github.com/guitheodoros" target="_blank" rel="noopener">github.com/guitheodoros</a>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------------------------------------------------------------
+     FUNDO NO HOVER
+     Uma camada <img> por ferramenta dentro de #bg; entrar numa linha (mouse
+     ou foco por teclado) acende a dela. As imagens grandes só carregam
+     depois do load, para não atrasar a primeira pintura.
+  --------------------------------------------------------------------- */
+  const bg = document.getElementById('bg');
+  const tools = document.querySelectorAll('.tool');
+  let current = null;
+
+  tools.forEach(a => {
+    const im = document.createElement('img');
+    im.alt = '';
+    im.decoding = 'async';
+    bg.appendChild(im);
+    a.addEventListener('mouseenter', () => on(im));
+    a.addEventListener('focus', () => { if (a.matches(':focus-visible')) on(im); });
+    a.addEventListener('blur', off);
+  });
+  document.querySelector('.tools').addEventListener('mouseleave', off);
+  addEventListener('load', () => {
+    tools.forEach((a, i) => { bg.children[i].src = a.dataset.bg; });
+  });
+
+  function on(im){
+    if (current) current.classList.remove('on');
+    current = im;
+    if (!im.src) im.src = tools[[...bg.children].indexOf(im)].dataset.bg;
+    im.classList.add('on');
+  }
+  function off(){
+    if (current) current.classList.remove('on');
+    current = null;
+  }
+})();
+</script>
+</body>
+</html>
